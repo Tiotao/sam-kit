@@ -63,6 +63,7 @@
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "snavely_reprojection_error.h"
+#include "accidental_motion_error.h"
 
 DEFINE_string(input, "", "Input File name");
 DEFINE_string(trust_region_strategy, "levenberg_marquardt",
@@ -123,6 +124,7 @@ DEFINE_bool(line_search, false, "Use a line search instead of trust region "
 DEFINE_string(initial_ply, "", "Export the BAL file data as a PLY file.");
 DEFINE_string(final_ply, "", "Export the refined BAL file data as a PLY "
               "file.");
+DEFINE_bool(accidental_motion, true, "Use accidental motion model");
 
 namespace ceres {
 namespace examples {
@@ -268,7 +270,15 @@ void BuildProblem(BALProblem* bal_problem, Problem* problem) {
     CostFunction* cost_function;
     // Each Residual block takes a point and a camera as input and
     // outputs a 2 dimensional residual.
-    cost_function =
+    
+
+    if (FLAGS_accidental_motion) {
+      cost_function = 
+          AccidentalMotionError::Create(
+            observations[2 * i + 0],
+            observations[2 * i + 1]);
+    } else {
+      cost_function =
         (FLAGS_use_quaternions)
         ? SnavelyReprojectionErrorWithQuaternions::Create(
             observations[2 * i + 0],
@@ -276,6 +286,7 @@ void BuildProblem(BALProblem* bal_problem, Problem* problem) {
         : SnavelyReprojectionError::Create(
             observations[2 * i + 0],
             observations[2 * i + 1]);
+    }
 
     // If enabled use Huber's loss function.
     LossFunction* loss_function = FLAGS_robustify ? new HuberLoss(1.0) : NULL;
@@ -287,7 +298,7 @@ void BuildProblem(BALProblem* bal_problem, Problem* problem) {
         cameras + camera_block_size * bal_problem->camera_index()[i];
     double* point = points + point_block_size * bal_problem->point_index()[i];
 
-    if (FLAGS_use_quaternions) {
+    if (FLAGS_use_quaternions && !FLAGS_accidental_motion) {
       // When using quaternions, we split the camera into two
       // parameter blocks. One of size 4 for the quaternion and the
       // other of size 6 containing the translation, focal length and
@@ -302,7 +313,7 @@ void BuildProblem(BALProblem* bal_problem, Problem* problem) {
     }
   }
 
-  if (FLAGS_use_quaternions && FLAGS_use_local_parameterization) {
+  if (FLAGS_use_quaternions && FLAGS_use_local_parameterization && !FLAGS_accidental_motion) {
     LocalParameterization* quaternion_parameterization =
          new QuaternionParameterization;
     for (int i = 0; i < bal_problem->num_cameras(); ++i) {
