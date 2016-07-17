@@ -32,4 +32,5 @@
 *.app
 
 ceres-bin
+tracker/test
 
