@@ -79,18 +79,36 @@ class Tracker:
                  					maxLevel = 8,
                   					criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 20, 0.3))
 		self.imageDir = imageDir
-		self.corners = []
+		self.imagePaths = None
+		self.corners = None
+		self.referenceImageGray = None
 
 	def getCorners(self):
 		# get absolute path of the first image
-		imagePaths = [os.path.join(self.imageDir,fn) for fn in next(os.walk(self.imageDir))[2]]
-		referenceImagePath = imagePaths[0]
+		self.imagePaths = [os.path.join(self.imageDir,fn) for fn in next(os.walk(self.imageDir))[2]]
+		referenceImagePath = self.imagePaths[0]
 
 		# find corner in the first image
 		referenceImage = cv2.imread(referenceImagePath)
 		referenceImageGray = cv2.cvtColor(referenceImage, cv2.COLOR_BGR2GRAY)
+		self.referenceImageGray = referenceImageGray
 		self.corners = cv2.goodFeaturesToTrack(referenceImageGray, **self.featureParams)
-		print self.corners
+	
+	def trackCorners(self):
+		trackImagePaths = self.imagePaths[1:]
+		referenceCorners = self.corners
+		# track corners on each image
+		for imagePath in trackImagePaths:
+			# load tracking image
+			currentImage = cv2.imread(imagePath)
+			currentImageGray = cv2.cvtColor(currentImage, cv2.COLOR_BGR2GRAY)
+			# calculate optical flow
+			trackedCorners, status, err = cv2.calcOpticalFlowPyrLK(referenceImageGray, currentImageGray, referenceCorners, None, **self.lucasPramas)
+			goodTrackedCorners = trackedCorners[status==1]
+			# goodReferenceCorners = referenceCorners[status==1]
+			referenceCorners = goodTrackedCorners.reshape(-1, 1, 2)
+		self.corners = referenceCorners
+
 
 class Problem:
 	def __init__(self, imageDir):
