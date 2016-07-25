@@ -2,7 +2,10 @@ import os
 import numpy as np
 import cv2
 import itertools
+import config
 from logger import logger
+
+
 
 class Position2D:
 	def __init__(self, position):
@@ -28,9 +31,9 @@ class Camera:
 		self.rot = parameters.rot or (0, 0, 0, 0, 0, 0, 0, 0)
 		self.trans = parameters.trans or Position3D(0, 0, 0)
 		self.id = Camera._camera_count
-		self.focal = parameters.focal or 1720
-		self.k1 = parameters.k1 or 0
-		self.k2 = parameters.k2 or 0
+		self.focal = parameters.focal or config.CAMERA_PARAMS['focalLength']
+		self.k1 = parameters.k1 or config.CAMERA_PARAMS['k1']
+		self.k2 = parameters.k2 or config.CAMERA_PARAMS['k2']
 		Camera._camera_count += 1
 	
 	def __str__(self):
@@ -73,16 +76,9 @@ class Point:
 
 class Tracker:
 	def __init__(self, image_dir):
-		self.feature_params = dict( maxCorners = 1000,
-									qualityLevel = 0.02,
-									minDistance = 40,
-									blockSize = 20,
-									mask = None,
-									useHarrisDetector = True)
-		self.lucas_params = dict(	winSize  = (25,25),
-                 					maxLevel = 8,
-                  					criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 20, 0.3))
-		self.homography_params = dict(ransacThreshold = 0.2)
+		self.feature_params = config.FEATURE_PARAMS
+		self.lucas_params = config.LOCAS_PARAMS
+		self.homography_params = config.HOMOGRAPHY_PARAMS
 		self.image_dir = image_dir
 		self.image_paths = None
 		self.corners = None
@@ -208,8 +204,7 @@ class Problem:
 	
 	def track(self):
 		"""Tracks Harris corners using KLT Optical Flow"""
-		corner_filter = dict(edge = False,
-							 homography = True)
+		corner_filter = config.CORNER_FILTER
 		tracker = Tracker(self.image_dir)
 		tracker.get_corners()
 		tracker.track_corners()
