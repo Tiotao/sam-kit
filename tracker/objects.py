@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import cv2
+import itertools
 
 class Position2D:
 	def __init__(self, position):
@@ -71,15 +72,16 @@ class Point:
 
 class Tracker:
 	def __init__(self, image_dir):
-		self.feature_params = dict(  maxCorners = 1000,
+		self.feature_params = dict( maxCorners = 1000,
 									qualityLevel = 0.02,
 									minDistance = 40,
 									blockSize = 20,
 									mask = None,
-									useHarrisDetector=True)
+									useHarrisDetector = True)
 		self.lucas_params = dict(	winSize  = (25,25),
                  					maxLevel = 8,
                   					criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 20, 0.3))
+		self.homography_params = dict(ransacThreshold = 0.2)
 		self.image_dir = image_dir
 		self.image_paths = None
 		self.corners = None
@@ -100,7 +102,7 @@ class Tracker:
 		self.corners_optical_flow = []
 		for corner in self.corners:
 			self.corners_optical_flow.append([(corner.ravel()[0], corner.ravel()[1])])
-		print self.corners_optical_flow
+
 	
 	def draw_optical_flow(self):
 		"""Draws tracked optical flow"""
@@ -141,11 +143,47 @@ class Tracker:
 			# good_reference_corners = reference_corners[status==1]
 			reference_corners = good_tracked_corners.reshape(-1, 1, 2)
 			reference_image_gray = current_image_gray.copy()
-
+		
+		# update corner list and optical flow
 		self.corners = reference_corners
-		self.optical_flow = optical_flow
+		self.corners_optical_flow = optical_flow
 		self.draw_optical_flow()
 
+	def filter_corners(self, corner_filter):
+		"""Filter invalid corner to improve the accuracy and success rate of bundle adjustment"""
+		if corner_filter['homography']:
+			self.filter_homography_corners()
+		if corner_filter['edge']:
+			self.filter_edge_corners()
+	
+	def filter_homography_corners(self):
+		"""Filter invalid corner based on homography test"""
+		optical_flow = self.corners_optical_flow
+		corners = self.corners
+		num_of_corners = len(corners)
+		num_of_cameras = len(optical_flow[0])
+		reference_corners = np.float32(corners).reshape(-1, 1, 2)
+		# initialise a cumulative mask to indicate the validity of corners
+		cumulative_mask = np.zeros((num_of_corners, 1))
+		# examine the flow of each corner, see if it passes homography test in each image.
+		for i in xrange(0, num_of_cameras):
+			current_corners = np.float32([pt[i] for pt in optical_flow]).reshape(-1, 1, 2)
+			M, mask = cv2.findHomography(reference_corners, current_corners, cv2.RANSAC, 5.0)
+			cumulative_mask = cumulative_mask + mask
+		cumulative_mask = cumulative_mask.flatten().tolist()
+		# defines how many passes are required in a valid flow
+		min_pass = num_of_cameras * (1.0 - self.homography_params['ransacThreshold'])
+		for j in xrange(0, num_of_corners):
+			if (cumulative_mask[j] < min_pass):
+				cumulative_mask[j] = False
+			else:
+				cumulative_mask[j] = True
+		# remove invalid corners and its optical flow
+		itertools.compress(optical_flow, cumulative_mask)
+		itertools.compress(corners, cumulative_mask)
+		# update corner list and optical flow
+		self.corners_optical_flow = optical_flow
+		self.corners = corners
 
 
 class Problem:
@@ -157,12 +195,12 @@ class Problem:
 	
 	def track(self):
 		"""Tracks Harris corners using KLT Optical Flow"""
-		corner_filter = dict(edge = True,
+		corner_filter = dict(edge = False,
 							 homography = True)
 		tracker = Tracker(self.image_dir)
 		tracker.get_corners()
 		tracker.track_corners()
-		# tracker.filter_corners(cornerFilter, )
+		tracker.filter_corners(corner_filter)
 		# tracker.update_problem()
 		
 		
