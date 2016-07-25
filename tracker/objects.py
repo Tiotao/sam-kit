@@ -216,10 +216,10 @@ class Tracker:
 		for corner in self.corners:
 			raw_position = corner.tolist()[0]
 			# normalize opencv position representation (0 -> w, 0 -> h) to bundler position representation (-w/2 -> w/2, h/2 -> -h/2)
-			position = Position3D( (int(raw_position[0] - image_width / 2 - 1), 
-									int(image_height / 2 - raw_position[1] + 1),
+			position = Position3D( (int(raw_position[0] - image_width / 2), 
+									int(image_height / 2 - raw_position[1]),
 									estimated_distance))
-			color = tuple(self.reference_image[position.x][position.y].tolist())
+			color = tuple(self.reference_image[position.x-1][position.y+1].tolist())
 			point_paramaters = dict( position = position,
 									 color = color,
 									 obsList = [])
@@ -230,7 +230,8 @@ class Tracker:
 			point = points[corner_id]
 			for camera_id, corner_position in enumerate(flow):
 				camera = cameras[camera_id]
-				observation = Observation(dict( position = Position2D(corner_position),
+				position = Position2D((corner_position[0] - image_width / 2, image_height / 2 - corner_position[1]))
+				observation = Observation(dict( position = position,
 												camera = camera))
 				point.obs_list.append(observation)
 		
