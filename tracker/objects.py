@@ -2,6 +2,7 @@ import os
 import numpy as np
 import cv2
 import itertools
+from logger import logger
 
 class Position2D:
 	def __init__(self, position):
@@ -90,9 +91,11 @@ class Tracker:
 
 	def get_corners(self):
 		"""Gets Harris corners from reference image"""
+		logger.info("Start Identifying Corners")
 		# get absolute path of the first image
 		self.image_paths = [os.path.join(self.image_dir,fn) for fn in next(os.walk(self.image_dir))[2]]
 		reference_image_path = self.image_paths[0]
+		logger.info("Reference Image: " + str(reference_image_path))
 		# find corner in the first image
 		reference_image = cv2.imread(reference_image_path)
 		reference_image_gray = cv2.cvtColor(reference_image, cv2.COLOR_BGR2GRAY)
@@ -100,6 +103,7 @@ class Tracker:
 		self.corners = cv2.goodFeaturesToTrack(reference_image_gray, **self.feature_params)
 		# save corner as the first entry in optical flow array
 		self.corners_optical_flow = []
+		logger.info("Identified " + str(len(self.corners)) + " corners.")
 		for corner in self.corners:
 			self.corners_optical_flow.append([(corner.ravel()[0], corner.ravel()[1])])
 
@@ -116,7 +120,9 @@ class Tracker:
 	
 	def track_corners(self):
 		"""Tracks selected corners in the rest of the images"""
+		logger.info("Start Corner Tracking")
 		track_image_corners = self.image_paths[1:]
+		logger.info("Tracking corners in " + str(len(track_image_corners)) + " images.")
 		reference_corners = self.corners
 		optical_flow = self.corners_optical_flow
 		reference_image_gray = self.reference_image_gray
@@ -147,7 +153,10 @@ class Tracker:
 		# update corner list and optical flow
 		self.corners = reference_corners
 		self.corners_optical_flow = optical_flow
-		self.draw_optical_flow()
+		logger.info("Finsihed Corner Tracking")
+		logger.info(str(len(self.corners_optical_flow)) + " corners were found with complete optical flow")
+		
+		
 
 	def filter_corners(self, corner_filter):
 		"""Filter invalid corner to improve the accuracy and success rate of bundle adjustment"""
@@ -158,10 +167,12 @@ class Tracker:
 	
 	def filter_homography_corners(self):
 		"""Filter invalid corner based on homography test"""
+		logger.info("Filter Corners: Homography")
 		optical_flow = self.corners_optical_flow
 		corners = self.corners
 		num_of_corners = len(corners)
 		num_of_cameras = len(optical_flow[0])
+		logger.info("Starting Corners Number:" + str(num_of_corners))
 		reference_corners = np.float32(corners).reshape(-1, 1, 2)
 		# initialise a cumulative mask to indicate the validity of corners
 		cumulative_mask = np.zeros((num_of_corners, 1))
@@ -181,9 +192,11 @@ class Tracker:
 		# remove invalid corners and its optical flow
 		itertools.compress(optical_flow, cumulative_mask)
 		itertools.compress(corners, cumulative_mask)
+		logger.info("Result Corner Number: " + str(len(corners)))
 		# update corner list and optical flow
 		self.corners_optical_flow = optical_flow
 		self.corners = corners
+		logger.info("Finished Homography filtering, updating Corners and Optical Flow")
 
 
 class Problem:
@@ -201,6 +214,7 @@ class Problem:
 		tracker.get_corners()
 		tracker.track_corners()
 		tracker.filter_corners(corner_filter)
+		tracker.draw_optical_flow()
 		# tracker.update_problem()
 		
 		
