@@ -15,9 +15,11 @@ HOMOGRAPHY_PARAMS 	= dict(	ransacThreshold = 0.2)
 
 CAMERA_PARAMS		= dict( imageWidth  = 3264,
 							imageHeight = 2448,
-							focalLength = 2720.0,
+							focal       = 2720.0,
 							k1          = 0,
-							k2          = 0)
+							k2          = 0,
+							rot         = (1, 0, 0, 0, 1, 0, 0, 0, 1),
+							estDistance = 700)
 
 CORNER_FILTER		= dict( edge       = False,
 							homography = True)
