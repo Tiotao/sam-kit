@@ -199,6 +199,7 @@ class Tracker:
 
 	def update_problem(self, problem):
 		"""Update Problem based on tracking results"""
+		logger.info("Update Problem")
 		camera_params = config.CAMERA_PARAMS
 		camera_params['trans'] = Position3D((0, 0, 0))
 		image_width = camera_params['imageWidth']
@@ -246,6 +247,7 @@ class Tracker:
 			content = content + str(cam)
 		for pt in problem.pts:
 			content = content + str(pt)
+		logger.info("Write Problem into Bundler file: " + self.image_dir + "/bundle.out")
 		with open(self.image_dir + '/bundle.out', 'w') as f:
 			f.write(content) 
 
@@ -265,13 +267,8 @@ class Problem:
 		tracker.filter_corners(corner_filter)
 		tracker.draw_optical_flow()
 		tracker.update_problem(self)
-		tracker.create_bundler_file(self)
+		tracker.create_bundler_file(self, version)
 
-
-		
-		
-
-	
 	# def bundle(self):
 
 
