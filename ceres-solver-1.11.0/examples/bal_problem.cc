@@ -128,8 +128,8 @@ BALProblem::BALProblem(const std::string& filename, bool use_quaternions) {
     }
     // observations
     for (int j = 0; j < num_cameras_; ++j) {
-      FscanfOrDie(fptr, "%d", camera_index_ + num_cameras_ * i + j);
-      FscanfOrDie(fptr, "%d", point_index_ + num_cameras_ * i + j);
+      FscanfOrDie(fptr, "%d %*d", camera_index_ + num_cameras_ * i + j);
+      point_index_[num_cameras_ * i + j] = i;
       for (int k = 0; k < 2; ++k) {
         FscanfOrDie(fptr, "%lf", observations_ + i * num_cameras_ * 2 + 2 * j + k);
       }
@@ -138,7 +138,7 @@ BALProblem::BALProblem(const std::string& filename, bool use_quaternions) {
 
   // for (int i = 0; i < num_parameters_; ++i) 
   //   std::cout << parameters_[i] << " ";
-  // std::cout << " |||| " << std::endl;
+  // std::cout << " |||| point index" << std::endl;
   // for (int i = 0; i < 2 * num_observations_; ++i) 
   //   std::cout << observations_[i] << " ";
   // std::cout << " |||| " << std::endl;
@@ -167,28 +167,6 @@ BALProblem::BALProblem(const std::string& filename, bool use_quaternions) {
   fclose(fptr);
 
   use_quaternions_ = use_quaternions;
-  // if (use_quaternions) {
-  //   // Switch the angle-axis rotations to quaternions.
-  //   num_parameters_ = 10 * num_cameras_ + 3 * num_points_;
-  //   double* quaternion_parameters = new double[num_parameters_];
-  //   double* original_cursor = parameters_;
-  //   double* quaternion_cursor = quaternion_parameters;
-  //   for (int i = 0; i < num_cameras_; ++i) {
-  //     AngleAxisToQuaternion(original_cursor, quaternion_cursor);
-  //     quaternion_cursor += 4;
-  //     original_cursor += 3;
-  //     for (int j = 4; j < 10; ++j) {
-  //      *quaternion_cursor++ = *original_cursor++;
-  //     }
-  //   }
-  //   // Copy the rest of the points.
-  //   for (int i = 0; i < 3 * num_points_; ++i) {
-  //     *quaternion_cursor++ = *original_cursor++;
-  //   }
-  //   // Swap in the quaternion parameters.
-  //   delete []parameters_;
-  //   parameters_ = quaternion_parameters;
-  // }
   
 }
 
@@ -314,14 +292,10 @@ void BALProblem::Normalize() {
   // Compute the marginal median of the geometry.
   std::vector<double> tmp(num_points_);
   Eigen::Vector3d median;
-  std::cout << "camera block size: " << camera_block_size() << std::endl;
   double* points = mutable_points();
-  std::cout << "points_: " << *(points-2) << std::endl;
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < num_points_; ++j) {
-      
       tmp[j] = points[3 * j + i];
-      std::cout <<"temp: " <<j <<" " << i << " " << tmp[j] << " end" << std::endl;
     }
     median(i) = Median(&tmp);
   }
@@ -344,9 +318,7 @@ void BALProblem::Normalize() {
   // X = scale * (X - median)
   for (int i = 0; i < num_points_; ++i) {
     VectorRef point(points + 3 * i, 3);
-    std::cout <<"median: " << median << " end" << std::endl;
     point = scale * (point - median);
-    std::cout <<"scale: " << point << " end" << std::endl;
   }
 
   double* cameras = mutable_cameras();

@@ -106,7 +106,7 @@ DEFINE_double(eta, 1e-2, "Default value for eta. Eta determines the "
              "Changing this parameter can affect solve performance.");
 
 DEFINE_int32(num_threads, 1, "Number of threads.");
-DEFINE_int32(num_iterations, 5, "Number of iterations.");
+DEFINE_int32(num_iterations, 500, "Number of iterations.");
 DEFINE_double(max_solver_time, 1e32, "Maximum solve time in seconds.");
 DEFINE_bool(nonmonotonic_steps, false, "Trust region algorithm can use"
             " nonmonotic steps.");
@@ -122,8 +122,8 @@ DEFINE_int32(random_seed, 38401, "Random seed used to set the state "
              "the pertubations.");
 DEFINE_bool(line_search, false, "Use a line search instead of trust region "
             "algorithm.");
-DEFINE_string(initial_ply, "", "Export the BAL file data as a PLY file.");
-DEFINE_string(final_ply, "", "Export the refined BAL file data as a PLY "
+DEFINE_string(initial_ply, "out.ply", "Export the BAL file data as a PLY file.");
+DEFINE_string(final_ply, "test.ply", "Export the refined BAL file data as a PLY "
               "file.");
 DEFINE_bool(accidental_motion, true, "Use accidental motion model");
 
@@ -155,6 +155,9 @@ void SetOrdering(BALProblem* bal_problem, Solver::Options* options) {
   const int num_cameras = bal_problem->num_cameras();
   const int camera_block_size = bal_problem->camera_block_size();
   double* cameras = bal_problem->mutable_cameras();
+
+  std::cout << "num_points: " << num_points << std::endl;
+  std::cout << "num_cameras: " << num_cameras << std::endl;
 
   if (options->use_inner_iterations) {
     if (FLAGS_blocks_for_inner_iterations == "cameras") {
@@ -338,17 +341,17 @@ void SolveProblem(const char* filename) {
   Problem problem;
 
   srand(FLAGS_random_seed);
-  bal_problem.Normalize();
-  bal_problem.Perturb(FLAGS_rotation_sigma,
-                      FLAGS_translation_sigma,
-                      FLAGS_point_sigma);
+  // bal_problem.Normalize();
+  // bal_problem.Perturb(FLAGS_rotation_sigma,
+  //                     FLAGS_translation_sigma,
+  //                     FLAGS_point_sigma);
 
   BuildProblem(&bal_problem, &problem);
   Solver::Options options;
   std::cout << " SetSolverOptionsFromFlags " << std::endl;
   SetSolverOptionsFromFlags(&bal_problem, &options);
-  options.gradient_tolerance = 1e-16;
-  options.function_tolerance = 1e-16;
+  options.gradient_tolerance = 1e-8;
+  options.function_tolerance = 1e-6;
   Solver::Summary summary;
   Solve(options, &problem, &summary);
   std::cout << summary.FullReport() << "\n";
