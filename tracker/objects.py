@@ -242,7 +242,8 @@ class Tracker:
 		
 	def create_bundler_file(self, problem):
 		"""Write Problem into a Bundler file"""
-		content = "# Bundle file v0.3\n%s %s\n" % (str(len(problem.cam)), str(len(problem.pts)))
+		# content = "# Bundle file v0.3\n%s %s\n" % (str(len(problem.cam)), str(len(problem.pts)))
+		content = "%s %s\n" % (str(len(problem.cam)), str(len(problem.pts))) # no Bundle File header
 		for cam in problem.cam:
 			content = content + str(cam)
 		for pt in problem.pts:
