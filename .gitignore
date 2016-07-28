@@ -126,3 +126,5 @@ ENV/
 
 # Test image
 *.jpg
+
+.vscode/

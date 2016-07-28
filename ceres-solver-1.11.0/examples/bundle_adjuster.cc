@@ -72,10 +72,10 @@ DEFINE_string(trust_region_strategy, "levenberg_marquardt",
 DEFINE_string(dogleg, "traditional_dogleg", "Options are: traditional_dogleg,"
               "subspace_dogleg.");
 
-DEFINE_bool(inner_iterations, false, "Use inner iterations to non-linearly "
+DEFINE_bool(inner_iterations, true, "Use inner iterations to non-linearly "
             "refine each successful trust region step.");
 
-DEFINE_string(blocks_for_inner_iterations, "automatic", "Options are: "
+DEFINE_string(blocks_for_inner_iterations, "points", "Options are: "
             "automatic, cameras, points, cameras,points, points,cameras");
 
 DEFINE_string(linear_solver, "sparse_schur", "Options are: "
@@ -93,20 +93,20 @@ DEFINE_string(sparse_linear_algebra_library, "suite_sparse",
               "Options are: suite_sparse and cx_sparse.");
 DEFINE_string(dense_linear_algebra_library, "eigen",
               "Options are: eigen and lapack.");
-DEFINE_string(ordering, "automatic", "Options are: automatic, user.");
+DEFINE_string(ordering, "user", "Options are: automatic, user.");
 
 DEFINE_bool(use_quaternions, false, "If true, uses quaternions to represent "
             "rotations. If false, angle axis is used.");
 DEFINE_bool(use_local_parameterization, false, "For quaternions, use a local "
             "parameterization.");
-DEFINE_bool(robustify, false, "Use a robust loss function.");
+DEFINE_bool(robustify, true, "Use a robust loss function.");
 
-DEFINE_double(eta, 1e-2, "Default value for eta. Eta determines the "
+DEFINE_double(eta, 1e-3, "Default value for eta. Eta determines the "
              "accuracy of each linear solve of the truncated newton step. "
              "Changing this parameter can affect solve performance.");
 
-DEFINE_int32(num_threads, 1, "Number of threads.");
-DEFINE_int32(num_iterations, 500, "Number of iterations.");
+DEFINE_int32(num_threads, 10, "Number of threads.");
+DEFINE_int32(num_iterations, 10, "Number of iterations.");
 DEFINE_double(max_solver_time, 1e32, "Maximum solve time in seconds.");
 DEFINE_bool(nonmonotonic_steps, false, "Trust region algorithm can use"
             " nonmonotic steps.");
@@ -342,16 +342,16 @@ void SolveProblem(const char* filename) {
 
   srand(FLAGS_random_seed);
   // bal_problem.Normalize();
-  // bal_problem.Perturb(FLAGS_rotation_sigma,
-  //                     FLAGS_translation_sigma,
-  //                     FLAGS_point_sigma);
+  bal_problem.Perturb(FLAGS_rotation_sigma,
+                      FLAGS_translation_sigma,
+                      FLAGS_point_sigma);
 
   BuildProblem(&bal_problem, &problem);
   Solver::Options options;
   std::cout << " SetSolverOptionsFromFlags " << std::endl;
   SetSolverOptionsFromFlags(&bal_problem, &options);
-  options.gradient_tolerance = 1e-8;
-  options.function_tolerance = 1e-6;
+  options.gradient_tolerance = 1e-10;
+  options.function_tolerance = 1e-10;
   Solver::Summary summary;
   Solve(options, &problem, &summary);
   std::cout << summary.FullReport() << "\n";
