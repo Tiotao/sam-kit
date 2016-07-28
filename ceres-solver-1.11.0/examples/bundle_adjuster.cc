@@ -57,6 +57,7 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "bal_problem.h"
 #include "ceres/ceres.h"
@@ -238,14 +239,15 @@ void SetMinimizerOptions(Solver::Options* options) {
   options->eta = FLAGS_eta;
   options->max_solver_time_in_seconds = FLAGS_max_solver_time;
   options->use_nonmonotonic_steps = FLAGS_nonmonotonic_steps;
+  
   if (FLAGS_line_search) {
     options->minimizer_type = ceres::LINE_SEARCH;
   }
-
   CHECK(StringToTrustRegionStrategyType(FLAGS_trust_region_strategy,
                                         &options->trust_region_strategy_type));
   CHECK(StringToDoglegType(FLAGS_dogleg, &options->dogleg_type));
   options->use_inner_iterations = FLAGS_inner_iterations;
+  
 }
 
 void SetSolverOptionsFromFlags(BALProblem* bal_problem,
@@ -256,6 +258,7 @@ void SetSolverOptionsFromFlags(BALProblem* bal_problem,
 }
 
 void BuildProblem(BALProblem* bal_problem, Problem* problem) {
+  std::cout << " BuildProblem " << std::endl;
   const int point_block_size = bal_problem->point_block_size();
   const int camera_block_size = bal_problem->camera_block_size();
   double* points = bal_problem->mutable_points();
@@ -321,11 +324,13 @@ void BuildProblem(BALProblem* bal_problem, Problem* problem) {
                                    quaternion_parameterization);
     }
   }
+  std::cout << " BuildProblem End" << std::endl;
 }
 
 void SolveProblem(const char* filename) {
+  std::cout << " SolveProblem " << FLAGS_use_quaternions << std::endl;
   BALProblem bal_problem(filename, FLAGS_use_quaternions);
-
+  
   if (!FLAGS_initial_ply.empty()) {
     bal_problem.WriteToPLYFile(FLAGS_initial_ply);
   }
@@ -340,6 +345,7 @@ void SolveProblem(const char* filename) {
 
   BuildProblem(&bal_problem, &problem);
   Solver::Options options;
+  std::cout << " SetSolverOptionsFromFlags " << std::endl;
   SetSolverOptionsFromFlags(&bal_problem, &options);
   options.gradient_tolerance = 1e-16;
   options.function_tolerance = 1e-16;
@@ -350,6 +356,7 @@ void SolveProblem(const char* filename) {
   if (!FLAGS_final_ply.empty()) {
     bal_problem.WriteToPLYFile(FLAGS_final_ply);
   }
+  std::cout << " SolveProblemEnd " << std::endl;
 }
 
 }  // namespace examples

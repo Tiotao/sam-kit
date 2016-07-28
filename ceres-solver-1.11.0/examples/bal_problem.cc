@@ -50,7 +50,6 @@ typedef Eigen::Map<const Eigen::VectorXd> ConstVectorRef;
 template<typename T>
 void FscanfOrDie(FILE* fptr, const char* format, T* value) {
   int num_scanned = fscanf(fptr, format, value);
-  std::cout << "hey hey hey " << *value;
   if (num_scanned != 1) {
     LOG(FATAL) << "Invalid UW data file.";
   }
@@ -72,6 +71,7 @@ double Median(std::vector<double>* data) {
 }  // namespace
 
 BALProblem::BALProblem(const std::string& filename, bool use_quaternions) {
+  // std::cout << "use_quaternions_ " << use_quaternions << std::endl;
   FILE* fptr = fopen(filename.c_str(), "r");
 
   if (fptr == NULL) {
@@ -80,39 +80,93 @@ BALProblem::BALProblem(const std::string& filename, bool use_quaternions) {
   };
 
   // This wil die horribly on invalid files. Them's the breaks.
+
   FscanfOrDie(fptr, "%d", &num_cameras_);
   FscanfOrDie(fptr, "%d", &num_points_);
   num_observations_ = num_cameras_ * num_points_;
-  std::cout << "observation: " << num_observations_ << std::endl;
   // FscanfOrDie(fptr, "%d", &num_observations_);
 
   VLOG(1) << "Header: " << num_cameras_
           << " " << num_points_
           << " " << num_observations_;
-
+  // each observation has one pt index and one camera index
   point_index_ = new int[num_observations_];
   camera_index_ = new int[num_observations_];
+  // store u and v in observation
   observations_ = new double[2 * num_observations_];
-  colors_ = new int[3 * num_points_]
+  colors_ = new int[3 * num_points_];
 
   num_parameters_ = 9 * num_cameras_ + 3 * num_points_;
   parameters_ = new double[num_parameters_];
 
-  for (int i = 0; i < num_observations_; ++i) {
-    FscanfOrDie(fptr, "%d", camera_index_ + i);
-    FscanfOrDie(fptr, "%d", point_index_ + i);
-    for (int j = 0; j < 2; ++j) {
-      FscanfOrDie(fptr, "%lf", observations_ + 2*i + j);
+  // read camera parameters (R, t, f, k1, k2)
+  for (int i = 0; i < num_cameras_; ++i) {
+    // focal, k1, k2
+    for (int j = 0; j < 3; ++j) {
+      FscanfOrDie(fptr, "%lf", parameters_ + i * 9 + 6 + j);
+    }
+    // R
+    FscanfOrDie(fptr, "%*f %*f %lf", parameters_ + i*9 + 1); // Ry
+    FscanfOrDie(fptr, "%lf %*f %*f", parameters_ + i*9 + 2); // Rz
+    FscanfOrDie(fptr, "%*f %lf %*f", parameters_ + i*9); // Rx
+    // t
+    for (int j = 0; j < 3; ++j) {
+      FscanfOrDie(fptr, "%lf", parameters_ + i*9 + 3 + j);
+    }
+    
+  }
+
+  // read point information
+  for (int i = 0; i < num_points_; ++i) {
+    // point location
+    for (int j = 0; j < 3; ++j) {
+      FscanfOrDie(fptr, "%lf", parameters_ + num_cameras_*9 + i*3 + j);
+    }
+    // point color
+    for (int j = 0; j < 3; ++j) {
+      FscanfOrDie(fptr, "%d", colors_ + i*3 + j);
+    }
+    // observations
+    for (int j = 0; j < num_cameras_; ++j) {
+      FscanfOrDie(fptr, "%d", camera_index_ + num_cameras_ * i + j);
+      FscanfOrDie(fptr, "%d", point_index_ + num_cameras_ * i + j);
+      for (int k = 0; k < 2; ++k) {
+        FscanfOrDie(fptr, "%lf", observations_ + i * num_cameras_ * 2 + 2 * j + k);
+      }
     }
   }
 
-  for (int i = 0; i < num_parameters_; ++i) {
-    FscanfOrDie(fptr, "%lf", parameters_ + i);
-  }
+  // for (int i = 0; i < num_parameters_; ++i) 
+  //   std::cout << parameters_[i] << " ";
+  // std::cout << " |||| " << std::endl;
+  // for (int i = 0; i < 2 * num_observations_; ++i) 
+  //   std::cout << observations_[i] << " ";
+  // std::cout << " |||| " << std::endl;
+  // for (int i = 0; i < num_observations_; ++i) 
+  //   std::cout << camera_index_[i] << " ";
+  // std::cout << " |||| " << std::endl;
+  // for (int i = 0; i < num_observations_; ++i) 
+  //   std::cout << point_index_[i] << " ";
+  // std::cout << " |||| " << std::endl;
+  // for (int i = 0; i < 3 * num_points_; ++i) 
+  //   std::cout << colors_[i] << " ";
+  // std::cout << "use_quaternions_ " << use_quaternions_ << std::endl;
+
+  // for (int i = 0; i < num_observations_; ++i) {
+  //   FscanfOrDie(fptr, "%d", camera_index_ + i);
+  //   FscanfOrDie(fptr, "%d", point_index_ + i);
+  //   for (int j = 0; j < 2; ++j) {
+  //     FscanfOrDie(fptr, "%lf", observations_ + 2*i + j);
+  //   }
+  // }
+
+  // for (int i = 0; i < num_parameters_; ++i) {
+  //   FscanfOrDie(fptr, "%lf", parameters_ + i);
+  // }
 
   fclose(fptr);
 
-  // use_quaternions_ = use_quaternions;
+  use_quaternions_ = use_quaternions;
   // if (use_quaternions) {
   //   // Switch the angle-axis rotations to quaternions.
   //   num_parameters_ = 10 * num_cameras_ + 3 * num_points_;
@@ -135,6 +189,7 @@ BALProblem::BALProblem(const std::string& filename, bool use_quaternions) {
   //   delete []parameters_;
   //   parameters_ = quaternion_parameters;
   // }
+  
 }
 
 // This function writes the problem to a file in the same format that
@@ -259,25 +314,29 @@ void BALProblem::Normalize() {
   // Compute the marginal median of the geometry.
   std::vector<double> tmp(num_points_);
   Eigen::Vector3d median;
+  std::cout << "camera block size: " << camera_block_size() << std::endl;
   double* points = mutable_points();
+  std::cout << "points_: " << *(points-2) << std::endl;
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < num_points_; ++j) {
+      
       tmp[j] = points[3 * j + i];
+      std::cout <<"temp: " <<j <<" " << i << " " << tmp[j] << " end" << std::endl;
     }
     median(i) = Median(&tmp);
   }
-
+  
   for (int i = 0; i < num_points_; ++i) {
     VectorRef point(points + 3 * i, 3);
     tmp[i] = (point - median).lpNorm<1>();
   }
 
   const double median_absolute_deviation = Median(&tmp);
-
+  
   // Scale so that the median absolute deviation of the resulting
   // reconstruction is 100.
   const double scale = 100.0 / median_absolute_deviation;
-
+  
   VLOG(2) << "median: " << median.transpose();
   VLOG(2) << "median absolute deviation: " << median_absolute_deviation;
   VLOG(2) << "scale: " << scale;
@@ -285,7 +344,9 @@ void BALProblem::Normalize() {
   // X = scale * (X - median)
   for (int i = 0; i < num_points_; ++i) {
     VectorRef point(points + 3 * i, 3);
+    std::cout <<"median: " << median << " end" << std::endl;
     point = scale * (point - median);
+    std::cout <<"scale: " << point << " end" << std::endl;
   }
 
   double* cameras = mutable_cameras();
@@ -338,6 +399,7 @@ BALProblem::~BALProblem() {
   delete []camera_index_;
   delete []observations_;
   delete []parameters_;
+  delete []colors_;
 }
 
 }  // namespace examples

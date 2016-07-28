@@ -97,6 +97,7 @@ class BALProblem {
 
   int* point_index_;
   int* camera_index_;
+  int* colors_;
   double* observations_;
   // The parameter vector is laid out as follows
   // [camera_1, ..., camera_n, point_1, ..., point_m]

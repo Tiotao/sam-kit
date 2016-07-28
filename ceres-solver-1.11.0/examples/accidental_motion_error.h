@@ -56,8 +56,7 @@ struct AccidentalMotionError {
 
   template <typename T>
   bool operator()(const T* const camera,
-                  const T* const p_xy,
-                  const T* const p_z,
+                  const T* const point,
                   T* residuals) const {
     
     // camera[3,4,5] are the translation.
@@ -71,9 +70,9 @@ struct AccidentalMotionError {
 
     // Compute point location
     T p[3] = { 
-      p_xy[0] / p_z[0], 
-      p_xy[1] / p_z[0], 
-      T(1) / p_z[0] 
+      point[0] / point[2], 
+      point[1] / point[2], 
+      T(1) / point[2] 
     };
 
     T image_x = T(observed_x) / focal;
@@ -97,7 +96,7 @@ struct AccidentalMotionError {
   // the client code.
   static ceres::CostFunction* Create(const double observed_x,
                                      const double observed_y) {
-    return (new ceres::AutoDiffCostFunction<AccidentalMotionError, 2, 9, 2, 1>(
+    return (new ceres::AutoDiffCostFunction<AccidentalMotionError, 2, 9, 3>(
                 new AccidentalMotionError(observed_x, observed_y)));
   }
 
