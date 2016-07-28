@@ -32,7 +32,6 @@
 
 #include <map>
 #include <vector>
-#include <iostream>
 #include "ceres/array_utils.h"
 #include "ceres/casts.h"
 #include "ceres/compressed_row_sparse_matrix.h"
@@ -181,10 +180,8 @@ bool Program::IsValid() const {
 bool Program::ParameterBlocksAreFinite(string* message) const {
   CHECK_NOTNULL(message);
   for (int i = 0; i < parameter_blocks_.size(); ++i) {
-    // std::cout << "block number: " << i << std::endl << "block size:" << parameter_blocks_.size() << std::endl;
     const ParameterBlock* parameter_block = parameter_blocks_[i];
     const double* array = parameter_block->user_state();
-    // std::cout << "array: " << *array << " " << *(array + 1) << " " << *(array + 2) << std::endl;
     const int size = parameter_block->Size();
     const int invalid_index = FindInvalidValue(size, array);
     if (invalid_index != size) {

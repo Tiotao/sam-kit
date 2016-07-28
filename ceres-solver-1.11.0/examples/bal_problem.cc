@@ -39,7 +39,6 @@
 #include "ceres/rotation.h"
 #include "glog/logging.h"
 #include "random.h"
-#include <iostream>
 
 namespace ceres {
 namespace examples {
@@ -71,7 +70,6 @@ double Median(std::vector<double>* data) {
 }  // namespace
 
 BALProblem::BALProblem(const std::string& filename, bool use_quaternions) {
-  // std::cout << "use_quaternions_ " << use_quaternions << std::endl;
   FILE* fptr = fopen(filename.c_str(), "r");
 
   if (fptr == NULL) {
@@ -135,34 +133,6 @@ BALProblem::BALProblem(const std::string& filename, bool use_quaternions) {
       }
     }
   }
-
-  // for (int i = 0; i < num_parameters_; ++i) 
-  //   std::cout << parameters_[i] << " ";
-  // std::cout << " |||| point index" << std::endl;
-  // for (int i = 0; i < 2 * num_observations_; ++i) 
-  //   std::cout << observations_[i] << " ";
-  // std::cout << " |||| " << std::endl;
-  // for (int i = 0; i < num_observations_; ++i) 
-  //   std::cout << camera_index_[i] << " ";
-  // std::cout << " |||| " << std::endl;
-  // for (int i = 0; i < num_observations_; ++i) 
-  //   std::cout << point_index_[i] << " ";
-  // std::cout << " |||| " << std::endl;
-  // for (int i = 0; i < 3 * num_points_; ++i) 
-  //   std::cout << colors_[i] << " ";
-  // std::cout << "use_quaternions_ " << use_quaternions_ << std::endl;
-
-  // for (int i = 0; i < num_observations_; ++i) {
-  //   FscanfOrDie(fptr, "%d", camera_index_ + i);
-  //   FscanfOrDie(fptr, "%d", point_index_ + i);
-  //   for (int j = 0; j < 2; ++j) {
-  //     FscanfOrDie(fptr, "%lf", observations_ + 2*i + j);
-  //   }
-  // }
-
-  // for (int i = 0; i < num_parameters_; ++i) {
-  //   FscanfOrDie(fptr, "%lf", parameters_ + i);
-  // }
 
   fclose(fptr);
 
@@ -230,7 +200,7 @@ void BALProblem::WriteToPLYFile(const std::string& filename) const {
      << '\n' << "property uchar blue"
      << '\n' << "end_header" << std::endl;
 
-  // Export extrinsic data (i.e. camera centers) as green points.
+  // Export extrinsic data (i.e. camera centers) as colored points.
   double angle_axis[3];
   double center[3];
   for (int i = 0; i < num_cameras(); ++i)  {
@@ -247,7 +217,7 @@ void BALProblem::WriteToPLYFile(const std::string& filename) const {
     for (int j = 0; j < point_block_size(); ++j) {
       of << point[j] << ' ';
     }
-    of << "255 255 255\n";
+    of << colors_[3*i+2] << " " << colors_[3*i+1] << " " << colors_[3*i] << "\n";
   }
   of.close();
 }

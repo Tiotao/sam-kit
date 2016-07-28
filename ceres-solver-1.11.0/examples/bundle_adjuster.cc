@@ -156,9 +156,6 @@ void SetOrdering(BALProblem* bal_problem, Solver::Options* options) {
   const int camera_block_size = bal_problem->camera_block_size();
   double* cameras = bal_problem->mutable_cameras();
 
-  std::cout << "num_points: " << num_points << std::endl;
-  std::cout << "num_cameras: " << num_cameras << std::endl;
-
   if (options->use_inner_iterations) {
     if (FLAGS_blocks_for_inner_iterations == "cameras") {
       LOG(INFO) << "Camera blocks for inner iterations";
@@ -261,7 +258,6 @@ void SetSolverOptionsFromFlags(BALProblem* bal_problem,
 }
 
 void BuildProblem(BALProblem* bal_problem, Problem* problem) {
-  std::cout << " BuildProblem " << std::endl;
   const int point_block_size = bal_problem->point_block_size();
   const int camera_block_size = bal_problem->camera_block_size();
   double* points = bal_problem->mutable_points();
@@ -327,11 +323,9 @@ void BuildProblem(BALProblem* bal_problem, Problem* problem) {
                                    quaternion_parameterization);
     }
   }
-  std::cout << " BuildProblem End" << std::endl;
 }
 
 void SolveProblem(const char* filename) {
-  std::cout << " SolveProblem " << FLAGS_use_quaternions << std::endl;
   BALProblem bal_problem(filename, FLAGS_use_quaternions);
   
   if (!FLAGS_initial_ply.empty()) {
@@ -348,7 +342,6 @@ void SolveProblem(const char* filename) {
 
   BuildProblem(&bal_problem, &problem);
   Solver::Options options;
-  std::cout << " SetSolverOptionsFromFlags " << std::endl;
   SetSolverOptionsFromFlags(&bal_problem, &options);
   options.gradient_tolerance = 1e-10;
   options.function_tolerance = 1e-10;
@@ -359,7 +352,6 @@ void SolveProblem(const char* filename) {
   if (!FLAGS_final_ply.empty()) {
     bal_problem.WriteToPLYFile(FLAGS_final_ply);
   }
-  std::cout << " SolveProblemEnd " << std::endl;
 }
 
 }  // namespace examples

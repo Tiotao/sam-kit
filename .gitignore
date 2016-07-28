@@ -128,3 +128,5 @@ ENV/
 *.jpg
 
 .vscode/
+
+tracker/example/
