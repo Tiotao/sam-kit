@@ -127,6 +127,6 @@ ENV/
 # Test image
 *.jpg
 
-.vscode/
+.vscode
 
 tracker/example/
