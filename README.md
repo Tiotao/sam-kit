@@ -3,7 +3,7 @@ Structure from Accidental Motion Kit (SAM Kit)
 
 ![Demostration](http://imgur.com/MmPxeXH.png)
 
-Strucutre from Accidental Motion Kit is a 3D reconstruction software kit. It is capable of reconsturcting 3D sparse structure of an object from a sequence of images with limited camera translation and rotation. The reconstruction model is based on Fisher Yu and David Gallup's work in 2014, 3D Reconstruction from Accidental Motion.
+Strucutre from Accidental Motion Kit is a 3D reconstruction software kit. It is capable of reconstructing 3D sparse structure of an object from a sequence of images with limited camera translation and rotation. The reconstruction model is based on Fisher Yu and David Gallup's work in 2014, 3D Reconstruction from Accidental Motion.
 
 Please see [CVPR 2014 3D Reconstruction from Accidental Motion](http://www.yf.io/p/tiny) for more information about the theories behind the SAM Kit.
 
