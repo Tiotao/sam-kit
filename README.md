@@ -1,7 +1,11 @@
 Structure from Accidental Motion Kit (SAM Kit)
 ===================================================
 
-This kit is written based on Ceres Solver. 
+Strucutre from Accidental Motion Kit is a 3D reconstruction software kit. It is capable of reconsturcting 3D sparse structure of an object from a sequence of images with limited camera translation and rotation. The reconstruction model is based on Fisher Yu and David Gallup's work in 2014, 3D Reconstruction from Accidental Motion.
+
+Please see [CVPR 2014 3D Reconstruction from Accidental Motion](http://www.yf.io/p/tiny) for more information about the theories behind the SAM Kit.
+
+This kit uses Ceres Solver for Bundle Adjustment.
 
 Please see [ceres-solver.org](http://ceres-solver.org/) for more
 information.
@@ -18,21 +22,17 @@ Follow [Installation Instructions](http://www.pyimagesearch.com/2015/06/22/insta
 
 ### Usage
 
-* Save image sequences (not included) in a folder, such as `example`.
-* Run following Script in Python (example in 'tracker/example.py'), script will generate a bundler file 'bundle.out' in the image folder.
+* Save image sequences (not included) in a folder, such as `example/images`.
+* Run following Script in Python (see `example/example.py`), script will generate a bundler file `bundle.out`, and an optical flow tracking result `optical_flow.jpg` in the output folder (`example/output`).
 ```
 python example.py
 ```
-* Run following command to perform bundle adjustment using Ceres Solver, obtain a PLY file with sparse result.
-```
-ceres-bin/bin/bundle_adjuster --input=path/to/bundle.out
-```
+* Bundle adjustment will be automatically performed once the featurue tracking is completed. BA result (`final.ply`) can be found in the output folder  (`example/output`). `init.ply` is the initial guess data.
+
 ### To-Do
 
-* Currently BA does not terminate at the right place. It is hence set to terminate at 10th iteration with reasonable error.
-* Rewrite Examples.
-* More test cases to prove that it is robust, as the Kit is written from scratch. It should achieve similar reconstruction result as the version I coded for FYP (Currently no).
-
+* More Examples.
+* More test cases to prove that it is robust, as the Kit is written from scratch. It should achieve similar reconstruction result as the version I coded for FYP.
 
 ### Note
 

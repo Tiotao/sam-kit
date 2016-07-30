@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import itertools
 import config
+import subprocess
 from logger import logger
 
 
@@ -74,11 +75,12 @@ class Point:
 	
 
 class Tracker:
-	def __init__(self, image_dir):
+	def __init__(self, image_dir, output_dir):
 		self.feature_params = config.FEATURE_PARAMS
 		self.lucas_params = config.LOCAS_PARAMS
 		self.homography_params = config.HOMOGRAPHY_PARAMS
 		self.image_dir = image_dir
+		self.output_dir = output_dir
 		self.image_paths = None
 		self.corners = None
 		self.reference_image_gray = None
@@ -112,7 +114,7 @@ class Tracker:
 			corner = np.array(corner, np.int32).reshape((-1,1,2))
 			cv2.polylines(mask, [corner], False, (0,255,255))
 		image = cv2.add(image, mask)
-		cv2.imwrite('optical_flow.jpg', image)
+		cv2.imwrite(self.output_dir + '/optical_flow.jpg', image)
 	
 	def track_corners(self):
 		"""Tracks selected corners in the rest of the images"""
@@ -244,32 +246,50 @@ class Tracker:
 		"""Write Problem into a Bundler file"""
 		# content = "# Bundle file v0.3\n%s %s\n" % (str(len(problem.cam)), str(len(problem.pts)))
 		content = "%s %s\n" % (str(len(problem.cam)), str(len(problem.pts))) # no Bundle File header
+		output_dir = self.output_dir
 		for cam in problem.cam:
 			content = content + str(cam)
 		for pt in problem.pts:
 			content = content + str(pt)
 		logger.info("Write Problem into Bundler file: " + self.image_dir + "/bundle.out")
-		with open(self.image_dir + '/bundle.out', 'w') as f:
+		if not os.path.exists(output_dir):
+			os.makedirs(output_dir)
+		with open(output_dir + '/bundle.out', 'w') as f:
 			f.write(content) 
 
 
 class Problem:
-	def __init__(self, image_dir):
+	def __init__(self, image_dir, output_dir):
 		self.image_dir = image_dir
+		self.output_dir = output_dir
 		self.cam = []
 		self.pts = []
 	
 	def track(self):
 		"""Tracks Harris corners using KLT Optical Flow"""
 		corner_filter = config.CORNER_FILTER
-		tracker = Tracker(self.image_dir)
+		tracker = Tracker(self.image_dir, self.output_dir)
 		tracker.get_corners()
 		tracker.track_corners()
 		tracker.filter_corners(corner_filter)
 		tracker.draw_optical_flow()
 		tracker.update_problem(self)
-		tracker.create_bundler_file(self, version)
+		tracker.create_bundler_file(self)
 
-	# def bundle(self):
+	def bundle(self):
+		"""Call Ceres Solver for Bundle Adjustment"""
+		output_dir = self.output_dir
+		source_path = output_dir + '/bundle.out'
+		solver_path = config.CERES_PARAMS['solverPath']
+		max_iterations = config.CERES_PARAMS['maxIterations']
+		logger.info("Bundle Adjusting")
+		subprocess.call([solver_path, 
+						'--input=' + source_path, 
+						'--num_iterations=' + str(max_iterations), 
+						'--inner_iterations=true', 
+						'--nonmonotonic_steps=false', 
+						'--initial_ply=' + output_dir + '/initial.ply', 
+						'--final_ply=' + output_dir + '/final.ply'])
+		logger.info("Bundle Adjust Completed")
 
 

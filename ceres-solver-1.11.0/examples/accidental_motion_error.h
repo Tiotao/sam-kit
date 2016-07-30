@@ -66,7 +66,9 @@ struct AccidentalMotionError {
     T rot[3] = { camera[0], camera[1], camera[2] };
 
     // camera[6] is the focal length of the camera
-    const T& focal = camera[6];
+    // const T& focal = camera[6];
+    // focal length is set to be constant for now
+    const T& focal = T(2720.0);
 
     // Compute point location
     T p[3] = { 

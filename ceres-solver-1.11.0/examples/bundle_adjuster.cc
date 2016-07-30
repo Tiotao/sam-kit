@@ -122,8 +122,8 @@ DEFINE_int32(random_seed, 38401, "Random seed used to set the state "
              "the pertubations.");
 DEFINE_bool(line_search, false, "Use a line search instead of trust region "
             "algorithm.");
-DEFINE_string(initial_ply, "out.ply", "Export the BAL file data as a PLY file.");
-DEFINE_string(final_ply, "test.ply", "Export the refined BAL file data as a PLY "
+DEFINE_string(initial_ply, "initial.ply", "Export the BAL file data as a PLY file.");
+DEFINE_string(final_ply, "final.ply", "Export the refined BAL file data as a PLY "
               "file.");
 DEFINE_bool(accidental_motion, true, "Use accidental motion model");
 
