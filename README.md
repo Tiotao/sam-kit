@@ -14,7 +14,7 @@ information.
 
 ### Building
 
-Note: It is best to build the Ceres Solver in Linux or macOS, to build on Windows is a bit troublesome, using Linux Subsystem on Windows 10 is highly recommended. 
+Note: It is best to build the Ceres Solver on Linux or macOS, to build on Windows is a bit troublesome, Linux Subsystem on Windows 10 is highly recommended. 
 
 #### Install and Build Ceres Solver
 Follow [Installation Instructions](http://ceres-solver.org/building.html) here.
@@ -29,7 +29,7 @@ Follow [Installation Instructions](http://www.pyimagesearch.com/2015/06/22/insta
 ```
 python example.py
 ```
-* Bundle adjustment will be automatically performed once the featurue tracking is completed. BA result (`final.ply`) can be found in the output folder  (`example/output`). `init.ply` is the initial guess data.
+* Bundle adjustment will be automatically triggered once the featurue tracking is completed. BA result (`final.ply`) can be found in the output folder  (`example/output`). `init.ply` is the initial guess data.
 
 ### To-Do
 
